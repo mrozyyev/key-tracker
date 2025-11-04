@@ -216,6 +216,21 @@
               @keydown.enter="login()"
               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
             >
+            <div class="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+              <p class="font-semibold mb-1">Login instructions</p>
+              <ul class="list-disc ml-5 space-y-1">
+                <li>Use your phone number registered on WhatsApp</li>
+                <li>Format: starts with <span class="font-semibold">40</span> (example: 407xxxxxxx)</li>
+                <li>If you can't login, request registration in the <span class="font-semibold">Key-Wars</span> WhatsApp group</li>
+              </ul>
+              <div class="mt-2">
+                <a :href="getCantLoginLink()" target="_blank" rel="noopener"
+                   class="inline-flex items-center gap-2 text-sm text-green-700 hover:text-green-900 font-semibold">
+                  <span>💬</span>
+                  <span>Can't login? Ask to register</span>
+                </a>
+              </div>
+            </div>
           </div>
           <button 
             @click="login()" 
@@ -607,6 +622,7 @@
   <script>
     function app() {
       const baseURL = "https://script.google.com/macros/s/AKfycbxiCkD5qG8ncr4gzKJstHMCEM1sABHZbc2a3b5baLC-GapiHdQqTD_O7xNqcaP5ZKE/exec";
+      const whatsappGroupUrl = "https://chat.whatsapp.com/REPLACE_WITH_INVITE"; // Optional: set your Key-Wars group invite link
 
       return {
         phoneInput: "",
@@ -680,6 +696,15 @@
           }, 5000);
         },
 
+        getCantLoginLink() {
+          // If a WhatsApp group invite link is configured, use it; otherwise fallback to a generic message
+          if (whatsappGroupUrl && !/REPLACE_WITH_INVITE/.test(whatsappGroupUrl)) {
+            return whatsappGroupUrl;
+          }
+          const text = 'Hello, please register my number for the Key-Wars key tracker.';
+          return `https://wa.me/?text=${encodeURIComponent(text)}`;
+        },
+
         removeNotification(index) {
           this.notifications[index].visible = false;
           setTimeout(() => this.notifications.splice(index, 1), 300);
@@ -700,6 +725,10 @@
           try {
             // Normalize phone input (remove spaces, dashes, parentheses)
             const normalizedInput = this.phoneInput.trim().replace(/[\s\-\(\)]/g, '');
+            const digitsOnly = normalizedInput.replace(/\D/g, '');
+            if (!digitsOnly.startsWith('40')) {
+              this.showNotification('Tip: Phone numbers should start with 40 and match your WhatsApp number', 'warning');
+            }
             
             const res = await fetch(`${baseURL}?action=users`);
             
